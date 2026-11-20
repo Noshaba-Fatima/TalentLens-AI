@@ -1,0 +1,8 @@
+langgraph
+langchain
+langchain-groq
+pydantic
+pydantic-settings
+python-dotenv
+langchain-google-genai
+python-docx
