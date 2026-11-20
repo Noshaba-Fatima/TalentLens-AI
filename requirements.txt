@@ -6,3 +6,5 @@ pydantic-settings
 python-dotenv
 langchain-google-genai
 python-docx
+pytest
+streamlit

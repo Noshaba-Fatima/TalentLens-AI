@@ -39,3 +39,9 @@ class TalentLensState(TypedDict):
 
     # Error tracking
     errors: NotRequired[list[str]]
+
+    # Output of Assessment Validator
+    review_result: NotRequired[AssessmentReview]
+    review_feedback: NotRequired[str]
+    is_valid: NotRequired[bool]
+    revision_count: NotRequired[int]

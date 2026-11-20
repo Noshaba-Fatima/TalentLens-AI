@@ -1,7 +1,6 @@
-
 from enum import Enum
-from pydantic import BaseModel, Field
-from pydantic import model_validator
+from pydantic import BaseModel, Field, model_validator
+
 
 class SkillCategory(str, Enum):
     PROGRAMMING = "programming"
@@ -45,14 +44,14 @@ class JobDescription(BaseModel):
         default_factory=list
     )
 
-@model_validator(mode="after")
-def validate_experience_range(self):
-    if (
-        self.experience_min is not None
-        and self.experience_max is not None
-        and self.experience_max < self.experience_min
-    ):
-        raise ValueError(
-            "Maximum experience cannot be less than minimum experience"
-        )
-    return self
+    @model_validator(mode="after")
+    def validate_experience_range(self):
+        if (
+            self.experience_min is not None
+            and self.experience_max is not None
+            and self.experience_max < self.experience_min
+        ):
+            raise ValueError(
+                "Maximum experience cannot be less than minimum experience"
+            )
+        return self
