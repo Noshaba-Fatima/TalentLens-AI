@@ -2,140 +2,56 @@
 
 **Agentic AI-Powered Technical Assessment & Candidate Evaluation Platform**
 
-TalentLens AI is an end-to-end recruitment assessment system built with **LangGraph**, **Pydantic**, **Groq**, **Google Gemini**, and **Streamlit**. It automates the complete technical hiring assessment lifecycle—from transforming raw job descriptions into quality-reviewed candidate assessments (`.docx`) to extracting submitted answers, grading them against structured rubrics, and generating recruiter-ready evaluation reports.
-
----
-
-## Problem Statement
-
-Designing and grading technical assessments manually is slow, repetitive, and inconsistent. Hiring teams must analyze job descriptions, balance skill weights and difficulty, author clear questions with measurable rubrics, audit assessment quality, and grade candidate submissions objectively.
-
-TalentLens AI solves this by combining **LLM-powered specialized agents** with **deterministic Python validation and scoring** inside two orchestrated LangGraph workflows.
+TalentLens AI automates the end-to-end technical hiring assessment lifecycle using **LangGraph**, **Pydantic**, **Groq**, **Google Gemini**, and **Streamlit**. It pairs LLM agents with deterministic Python validation and scoring to generate quality-reviewed assessments and objectively evaluate candidate submissions.
 
 ---
 
 ## Key Features
 
-### Assessment Generation Pipeline
-- **Automated Job Description Analysis:** Extracts job title, experience bounds, responsibilities, required/preferred skills, and education into validated Pydantic schemas.
-- **Intelligent Assessment Planning:** Allocates skill weightages (enforcing an exact 100% sum), question counts, difficulty levels, question types, and total duration.
-- **Role-Specific Question Generation:** Generates technical questions with expected answers, marks, time limits, and measurable evaluation rubrics.
-- **Hybrid Review & Bounded Revision Loop:** Combines deterministic Python structural checks (`assessment_validator.py`) with LLM quality auditing (`quality_reviewer.py`) and routes rejected assessments back for revision up to a configurable retry limit (`MAX_RETRIES = 2`).
-- **Confidential Candidate Document Export:** Generates a clean, downloadable `.docx` assessment for candidates while strictly excluding expected answers and internal rubrics.
-
-### Candidate Evaluation Pipeline
-- **Assessment Persistence:** Stores full assessments (including rubrics and expected answers) by `assessment_id` so submitted candidate documents can be graded reliably.
-- **Automated Response Extraction:** Parses candidate answers from completed `.docx` submissions and maps them to original question IDs.
-- **Hybrid Rubric Grading:** Skips LLM calls deterministically for blank answers, grades attempted responses against expected answers and rubrics via Gemini, and clamps awarded marks in Python to `[0, max_marks]`.
-- **Deterministic Score Aggregation:** Computes exact totals, overall percentages, skill-wise breakdowns, and hiring recommendation tiers (`Strong Hire`, `Hire`, `Maybe`, `No Hire`) in Python—never relying on an LLM for arithmetic.
-- **Recruiter Evaluation Reports:** Synthesizes an executive summary, key strengths, and improvement areas via Groq, and exports a formatted `.docx` evaluation report.
-
-### Interactive Recruiter Dashboard
-- **Streamlit Console:** Clean 3-tab interface (**Generate Assessment**, **Evaluate Candidate**, **Assessment History**) with KPI cards, skill progress bars, rubric badges, and one-click `.docx` downloads.
+- **JD-to-Assessment Pipeline:** Extracts structured job requirements, plans balanced skill weightages (enforcing 100% total), and generates role-specific questions with expected answers and rubrics.
+- **Hybrid Quality Assurance:** Combines deterministic Python checks (question counts, skill distribution, difficulty, types, time limits, unique IDs) with an LLM quality audit inside a bounded LangGraph revision loop (`MAX_RETRIES = 2`).
+- **Confidential Candidate Export:** Generates downloadable `.docx` assessments for candidates while stripping out expected answers and rubrics.
+- **Automated Candidate Evaluation:** Extracts submitted `.docx` answers, grades attempted responses against rubrics (with Python mark clamping), computes exact skill-wise scores and hiring recommendations (`Strong Hire`, `Hire`, `Maybe`, `No Hire`) deterministically, and exports a recruiter `.docx` report.
+- **Recruiter Dashboard:** 3-tab Streamlit workspace (**Generate Assessment**, **Evaluate Candidate**, **Assessment History**) backed by local JSON persistence.
 
 ---
 
-## System Architecture
+## Architecture
 
 ![TalentLens Workflow](talentlens_workflow.png)
 
-### 1. Assessment Generation Workflow (`app/graph/workflow.py`)
-
-| Agent / Component | Responsibility | Technology |
-| :--- | :--- | :--- |
-| **JD Analyzer** | Extracts structured job requirements and skills from raw JD text | Groq + Pydantic |
-| **Assessment Planner** | Builds a balanced blueprint (weightages, counts, difficulty, duration) | Groq + Pydantic |
-| **Question Generator** | Generates or revises questions, expected answers, and rubrics | Gemini + Pydantic |
-| **Deterministic Validator** | Enforces question counts, skill distribution, difficulty, types, time limits, and unique IDs | Python |
-| **Quality Reviewer** | Audits technical accuracy, clarity, relevance, rubric quality, and duplication | Gemini + Pydantic |
-| **Review Combiner** | Merges deterministic and AI reviews into actionable revision feedback | Python |
-| **Revision Controller** | Conditionally routes failed assessments for revision with bounded retries | LangGraph |
-
-### 2. Candidate Evaluation Workflow (`app/graph/evaluation_workflow.py`)
-
-| Agent / Component | Responsibility | Technology |
-| :--- | :--- | :--- |
-| **Response Extractor** | Extracts and maps candidate answers from submitted `.docx` files | Python (`python-docx`) |
-| **Answer Evaluator** | Grades each answer against its rubric with prompt-injection guards and Python mark clamping | Gemini + Python |
-| **Report Generator** | Computes exact scores/skill percentages in Python and synthesizes an executive summary | Python + Groq |
-| **Report Exporter** | Exports the structured `CandidateEvaluationReport` to a recruiter-facing `.docx` | Python (`python-docx`) |
+1. **Assessment Generation (`app/graph/workflow.py`)**  
+   `JD Analyzer (Groq)` → `Assessment Planner (Groq)` → `Question Generator (Gemini)` → `Deterministic Validator (Python)` → `Quality Reviewer (Gemini)` → `Review Combiner (Python)` → `Bounded Revision Loop (LangGraph)`
+2. **Candidate Evaluation (`app/graph/evaluation_workflow.py`)**  
+   `Response Extractor (python-docx)` → `Answer Evaluator (Gemini + Python)` → `Report Generator (Python + Groq)` → `DOCX Report Export`
 
 ---
 
-## Technology Stack
+## Tech Stack
 
-- **Agent Orchestration:** LangGraph, LangChain
-- **LLM Providers:** Groq API, Google Gemini API (`langchain-groq`, `langchain-google-genai`)
-- **Data Validation & Config:** Python 3.11+, Pydantic, Pydantic Settings, `python-dotenv`
-- **Document Processing:** `python-docx`
-- **Frontend:** Streamlit
-- **Testing:** `pytest`
+- **Orchestration & LLMs:** LangGraph, LangChain, Groq API, Google Gemini API
+- **Validation & Processing:** Python 3.11+, Pydantic, `python-docx`
+- **UI & Testing:** Streamlit, `pytest`
 
 ---
 
-## Project Structure
+## Quick Start
 
-```text
-TalentLens-AI/
-│
-├── .streamlit/
-│   └── config.toml
-│
-├── app/
-│   ├── agents/
-│   │   ├── jd_analyser.py
-│   │   ├── assessment_planner.py
-│   │   ├── question_generator.py
-│   │   ├── assessment_validator.py
-│   │   ├── quality_reviewer.py
-│   │   ├── review_combiner.py
-│   │   ├── answer_evaluator.py
-│   │   └── report_generator.py
-│   │
-│   ├── config/
-│   │   └── settings.py
-│   │
-│   ├── graph/
-│   │   ├── state.py
-│   │   ├── workflow.py
-│   │   └── evaluation_workflow.py
-│   │
-│   ├── schemas/
-│   │   ├── job_description.py
-│   │   ├── assessment.py
-│   │   └── evaluation.py
-│   │
-│   └── services/
-│       ├── llm_service.py
-│       ├── storage_service.py
-│       ├── assessment_document_generator.py
-│       ├── candidate_response_extractor.py
-│       └── evaluation_report_generator.py
-│
-├── tests/
-│   ├── test_schemas.py
-│   ├── test_state.py
-│   ├── test_llm.py
-│   ├── test_jd_analyser.py
-│   ├── test_assessment_planner.py
-│   ├── test_question_generator.py
-│   ├── test_assessment_validator.py
-│   ├── test_quality_reviewer.py
-│   ├── test_review_combiner.py
-│   ├── test_workflow.py
-│   ├── test_workflow_routing.py
-│   ├── test_document_generator.py
-│   └── visualize_workflow.py
-│
-├── outputs/
-│   ├── assessments/
-│   ├── saved_assessments/
-│   └── evaluation_reports/
-│
-├── main.py
-├── streamlit_app.py
-├── talentlens_workflow.png
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
+```bash
+# 1. Clone and enter the repository
+git clone [https://github.com/Noshaba-Fatima/TalentLens-AI.git](https://github.com/Noshaba-Fatima/TalentLens-AI.git)
+cd TalentLens-AI
+
+# 2. Create and activate a virtual environment
+python -m venv venv
+.\venv\Scripts\activate        # Windows
+# source venv/bin/activate     # macOS / Linux
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Configure environment variables
+# Copy .env.example to .env and add your GROQ_API_KEY and GOOGLE_API_KEY
+
+# 5. Launch the Streamlit dashboard
+python main.py
